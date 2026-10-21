@@ -1,0 +1,21 @@
+{
+  "name": "lunea-spa-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host localhost",
+    "build": "vite build",
+    "preview": "vite preview --host localhost"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.0.0",
+    "axios": "^1.11.0"
+  },
+  "devDependencies": {
+    "vite": "^7.0.7",
+    "@vitejs/plugin-react": "^5.1.4"
+  }
+}

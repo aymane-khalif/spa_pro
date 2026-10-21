@@ -1,0 +1,11 @@
+**/node_modules/
+**/vendor/
+**/.env
+**/.env.*
+!**/.env.example
+**/dist/
+**/*.log
+**/.phpunit.cache/
+.DS_Store
+Thumbs.db
+!back_spa/.env.testing
