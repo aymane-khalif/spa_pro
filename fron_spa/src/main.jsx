@@ -7,7 +7,7 @@ import Services from './pages/Services';
 import RendezVous from './pages/RendezVous';
 import Connexion from './pages/connexion';
 import Contact from './pages/Contact';
-import Tracking from './pages/Tracking';
+import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import './styles/app.css';
 import './styles/pro.css';
@@ -16,7 +16,7 @@ function ServicePage({ booking = false }) {
  useEffect(() => { let active = true; api.get('/api/services').then(r => { if(active) setServices(r.data); }).catch(e => { if(active) setError(errorText(e)); }); return () => { active = false; }; }, []);
  if (error) return <p role="alert" className="pro-panel">{error}</p>;
  if (!services) return <p className="pro-panel">Chargement…</p>;
- if (booking) { const service = services.find(s => s.name === new URLSearchParams(location.search).get('service')); return service ? <RendezVous service={service}/> : <p className="pro-panel">Service introuvable. <Link to="/services">Voir les services</Link></p>; }
+ if (booking) { const service = services.find(s => s.name === new URLSearchParams(location.search).get('service')); return service ? <RendezVous key={service.id} service={service}/> : <p className="pro-panel">Service introuvable. <Link to="/services">Voir les services</Link></p>; }
  return <><Services services={services}/>{services.length === 0 && <p className="pro-panel">Aucun service disponible pour le moment.</p>}</>;
 }
 function Protected({ children, admin = false }) {
@@ -30,8 +30,35 @@ function Protected({ children, admin = false }) {
 }
 function Navigation() {
  const location = useLocation(); const [error, setError] = useState('');
+ const [user, setUser] = useState(null);
+ useEffect(() => {
+   let active = true;
+   const titles = { '/': 'Accueil', '/services': 'Nos Services', '/contact': 'Contact', '/profil': 'Mon profil', '/connexion': 'Connexion', '/rendez-vous': 'Réservation' };
+   document.title = (titles[location.pathname] || 'Administration') + ' | Lunéa Spa';
+   api.get('/api/user').then(({ data }) => { if (active) setUser(data); }).catch(() => { if (active) setUser(null); });
+   return () => { active = false; };
+ }, [location.pathname]);
  async function logout() { try { await csrf(); await api.post('/api/logout'); window.location.assign('/connexion'); } catch(e) { setError(errorText(e)); } }
- return <><nav className="pro-nav"><Link to="/">Lunéa Spa</Link><Link to="/services">Services</Link><Link to="/mon-rendez-vous">Suivi</Link><Link to="/contact">Contact</Link><Link to="/connexion">Connexion</Link><Link to="/admin/appointments">Administration</Link>{location.pathname !== '/connexion' && <button onClick={logout}>Déconnexion</button>}</nav>{error && <p role="alert">{error}</p>}</>;
+ return <>
+   <header className={`site-header ${location.pathname === '/' ? 'site-header--home' : ''}`}>
+     <nav className="lunea-navbar" aria-label="Navigation principale">
+       <Link to="/" className="lunea-logo" aria-label="Lunéa Spa — Accueil">
+         <span className="logo-name">🌿 Lunéa Spa</span>
+         <span className="logo-subtitle">WELLNESS &amp; RELAXATION</span>
+       </Link>
+       <div className="nav-links">
+         <Link to="/" aria-current={location.pathname === '/' ? 'page' : undefined}>Home</Link>
+         <Link to="/services" aria-current={location.pathname === '/services' ? 'page' : undefined}>Services</Link>
+         <Link to="/contact" aria-current={location.pathname === '/contact' ? 'page' : undefined}>Contact</Link>
+         {user?.is_admin && <Link to="/admin/appointments">Administration</Link>}
+       </div>
+       <div className="site-account">
+         {user ? <><Link to="/profil" className="site-profile">Mon profil</Link><button type="button" className="login-btn" onClick={logout}>Déconnexion</button></> : <Link to="/connexion" className="login-btn">Connexion</Link>}
+       </div>
+     </nav>
+     {error && <p className="site-nav-error" role="alert">{error}</p>}
+   </header>
+ </>;
 }
-function App() { return <BrowserRouter><Navigation/><Routes><Route path="/" element={<Home/>}/><Route path="/services" element={<ServicePage/>}/><Route path="/rendez-vous" element={<Protected><ServicePage booking/></Protected>}/><Route path="/connexion" element={<Connexion/>}/><Route path="/login" element={<Navigate to="/connexion" replace/>}/><Route path="/contact" element={<Contact/>}/><Route path="/mon-rendez-vous" element={<Tracking/>}/><Route path="/admin/*" element={<Protected admin><Admin/></Protected>}/><Route path="/clients/*" element={<Navigate to="/admin/clients" replace/>}/><Route path="/appointments/*" element={<Navigate to="/admin/appointments" replace/>}/><Route path="*" element={<main className="pro-panel">Page introuvable.</main>}/></Routes></BrowserRouter>; }
+function App() { return <BrowserRouter><Navigation/><Routes><Route path="/" element={<Home/>}/><Route path="/services" element={<ServicePage/>}/><Route path="/rendez-vous" element={<Protected><ServicePage booking/></Protected>}/><Route path="/connexion" element={<Connexion/>}/><Route path="/login" element={<Navigate to="/connexion" replace/>}/><Route path="/contact" element={<Contact/>}/><Route path="/profil" element={<Protected><Profile/></Protected>}/><Route path="/mon-rendez-vous" element={<Navigate to="/services" replace/>}/><Route path="/admin/*" element={<Protected admin><Admin/></Protected>}/><Route path="/clients/*" element={<Navigate to="/admin/clients" replace/>}/><Route path="/appointments/*" element={<Navigate to="/admin/appointments" replace/>}/><Route path="*" element={<main className="pro-panel">Page introuvable.</main>}/></Routes></BrowserRouter>; }
 createRoot(document.getElementById('root')).render(<React.StrictMode><App/></React.StrictMode>);

@@ -25,7 +25,7 @@ class ApiTest extends TestCase {
         $this->postJson('/api/login', ['email'=>'client@example.com','password'=>'password123'])->assertOk();
         $this->getJson('/api/user')->assertOk()->assertJsonPath('email','client@example.com');
     }
-    public function test_booking_tracking_and_admin_confirmation(): void {
+    public function test_booking_is_confirmed_and_admin_can_manage_it(): void {
         $user = User::factory()->create();
         $service = Service::create(['name'=>'Test service','description'=>'Test','price'=>200,'duration'=>60]);
         $data = ['nom'=>'Client','prenom'=>'Test','telephone'=>'0600000000','service_id'=>$service->id,'appointment_date'=>now()->addDay()->toDateString(),'appointment_time'=>'10:00','email'=>'someone-else@example.com'];
@@ -33,11 +33,9 @@ class ApiTest extends TestCase {
         $response = $this->actingAs($user)->postJson('/api/appointments',$data)->assertCreated();
         $this->assertDatabaseHas('clients',['email'=>$user->email]);
         $this->assertDatabaseMissing('clients',['email'=>'someone-else@example.com']);
-        $code = $response->json('code_suivi');
-        $this->postJson('/api/appointments/suivi',['code_suivi'=>strtolower($code)])->assertOk()->assertJsonPath('status','pending')->assertJsonMissingPath('client');
+        $response->assertJsonPath('status', 'confirmed')->assertJsonMissingPath('code_suivi');
         $admin = User::factory()->create(); $admin->forceFill(['is_admin'=>true])->save();
-        $this->actingAs($admin)->patchJson('/api/admin/appointments/'.$response->json('id').'/status',['status'=>'confirmed'])->assertOk();
-        $this->postJson('/api/appointments/suivi',['code_suivi'=>$code])->assertOk()->assertJsonPath('status','confirmed');
+        $this->actingAs($admin)->patchJson('/api/admin/appointments/'.$response->json('id').'/status',['status'=>'cancelled'])->assertOk();
         $this->actingAs($user)->postJson('/api/appointments',array_replace($data,['appointment_date'=>now()->subDay()->toDateString()]))->assertUnprocessable();
         $this->postJson('/api/appointments',array_replace($data,['appointment_time'=>'invalid']))->assertUnprocessable();
     }
@@ -56,5 +54,25 @@ class ApiTest extends TestCase {
         $this->assertDatabaseCount('messages',1);
         $this->getJson('/api/admin/messages')->assertUnauthorized();
     }
-}
 
+    public function test_duplicate_client_email_is_a_validation_error_and_unchanged_email_can_be_saved(): void {
+        $admin = User::factory()->create();
+        $admin->forceFill(['is_admin' => true])->save();
+        $this->actingAs($admin);
+        $data = ['nom'=>'Test','prenom'=>'Client','email'=>'unique@example.com','telephone'=>'0600000000','date_inscription'=>now()->toDateString()];
+        $client = $this->postJson('/api/admin/clients', $data)->assertCreated()->json();
+        $this->postJson('/api/admin/clients', $data)->assertUnprocessable()->assertJsonValidationErrors('email');
+        $this->putJson('/api/admin/clients/'.$client['id'], $data)->assertOk();
+        $other = $this->postJson('/api/admin/clients', array_replace($data, ['email'=>'other@example.com']))->assertCreated()->json();
+        $this->putJson('/api/admin/clients/'.$other['id'], $data)->assertUnprocessable()->assertJsonValidationErrors('email');
+    }
+    public function test_registration_without_a_stateful_origin_cannot_create_a_user_then_fail(): void {
+        $this->flushHeaders();
+        $this->postJson('/api/inscription', ['nom'=>'Test','prenom'=>'Client','telephone'=>'0600000000','email'=>'no-session@example.com','password'=>'password123','password_confirmation'=>'password123'])->assertStatus(400);
+        $this->assertDatabaseCount('users', 0);
+    }
+    public function test_cors_and_csrf_cookie_are_available_to_the_frontend(): void {
+        $this->get('/sanctum/csrf-cookie')->assertNoContent()->assertCookie('XSRF-TOKEN')->assertHeader('Access-Control-Allow-Origin', 'http://localhost:5173')->assertHeader('Access-Control-Allow-Credentials', 'true');
+        $this->options('/api/login', [], ['Origin'=>'http://localhost:5173','Access-Control-Request-Method'=>'POST','Access-Control-Request-Headers'=>'content-type,x-xsrf-token'])->assertNoContent()->assertHeader('Access-Control-Allow-Origin', 'http://localhost:5173');
+    }
+}

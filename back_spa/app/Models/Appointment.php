@@ -8,6 +8,8 @@ use App\Models\Service;
 
 class Appointment extends Model
 {
+    protected $hidden = ['code_suivi'];
+
     protected $fillable = [
         'client_id',
         'service_id',

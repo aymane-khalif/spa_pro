@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { api, csrf, errorText } from '../api';
 const clientFields = ['nom', 'prenom', 'email', 'telephone', 'date_inscription'];
@@ -7,10 +7,37 @@ const blankAppointment = { client_id:'', service_id:'', appointment_date:'', app
 export default function Admin() {
  const location = useLocation(), resource = location.pathname.includes('messages') ? 'messages' : location.pathname.includes('clients') ? 'clients' : 'appointments';
  const [rows, setRows] = useState([]), [clients, setClients] = useState([]), [services, setServices] = useState([]), [error, setError] = useState(''), [loading, setLoading] = useState(false), [busy, setBusy] = useState(false), [search, setSearch] = useState(''), [form, setForm] = useState(null), [selected, setSelected] = useState(null);
- async function load() { setLoading(true); setError(''); try { const r = await api.get('/api/admin/' + resource, { params: resource === 'clients' ? { search } : {} }); setRows(r.data); if(resource === 'appointments') { const [c,s] = await Promise.all([api.get('/api/admin/clients'),api.get('/api/services')]); setClients(c.data); setServices(s.data); } } catch(e) { setError(errorText(e)); } finally { setLoading(false); } }
+ const requestNumber = useRef(0);
+ const resourceRef = useRef(resource);
+ resourceRef.current = resource;
+ async function load() {
+   const number = ++requestNumber.current;
+   setLoading(true); setError('');
+   try {
+     const [r, c, s] = await Promise.all([
+       api.get('/api/admin/' + resource, { params: resource === 'clients' ? { search } : {} }),
+       resource === 'appointments' ? api.get('/api/admin/clients') : Promise.resolve(null),
+       resource === 'appointments' ? api.get('/api/services') : Promise.resolve(null),
+     ]);
+     if (number !== requestNumber.current) return;
+     setRows(r.data);
+     if (c) setClients(c.data);
+     if (s) setServices(s.data);
+   } catch (e) { if (number === requestNumber.current) setError(errorText(e)); }
+   finally { if (number === requestNumber.current) setLoading(false); }
+ }
  useEffect(() => { setRows([]); setForm(null); setSelected(null); setSearch(''); }, [resource]);
- useEffect(() => { load(); }, [resource, search]);
- async function mutate(method, suffix, data) { setBusy(true); setError(''); try { await csrf(); await api.request({ method, url:'/api/admin/' + resource + suffix, data }); setForm(null); setSelected(null); await load(); } catch(e) { setError(errorText(e)); } finally { setBusy(false); } }
+ useEffect(() => { load(); return () => { requestNumber.current++; }; }, [resource, search]);
+ async function mutate(method, suffix, data) {
+   setBusy(true); setError('');
+   try {
+     await csrf();
+     await api.request({ method, url: '/api/admin/' + resource + suffix, data });
+     if (resourceRef.current !== resource) return;
+     setForm(null); setSelected(null); await load();
+   } catch (e) { if (resourceRef.current === resource) setError(errorText(e)); }
+   finally { setBusy(false); }
+ }
  function edit(row) { setForm(resource === 'clients' ? { ...row } : { ...row, appointment_time: row.appointment_time.slice(0,5) }); setSelected(null); }
  return <main className="pro-panel"><div className="pro-admin-links"><Link to="/admin/appointments">Rendez-vous</Link><Link to="/admin/clients">Clients</Link><Link to="/admin/messages">Messages</Link></div><h1>{{clients:'Gestion des clients',appointments:'Gestion des rendez-vous',messages:'Messages reçus'}[resource]}</h1><p role="alert">{error}</p>{loading && <p>Chargement…</p>}{resource === 'clients' && <label>Rechercher<input value={search} onChange={e => setSearch(e.target.value)}/></label>}{resource !== 'messages' && <button onClick={() => { setForm({ ...(resource === 'clients' ? blankClient : blankAppointment) }); setSelected(null); }}>Nouveau</button>}
  {form && <form onSubmit={e => { e.preventDefault(); const fields = resource === 'clients' ? clientFields : Object.keys(blankAppointment); const data = Object.fromEntries(fields.map(key => [key,form[key]])); mutate(form.id ? 'put':'post',form.id ? '/' + form.id:'',data); }}>

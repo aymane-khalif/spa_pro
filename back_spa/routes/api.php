@@ -10,9 +10,10 @@ Route::get('/services', fn () => Service::all());
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::post('/inscription', [AuthController::class, 'register'])->middleware('throttle:5,1');
 Route::post('/contact', [MessageController::class, 'store'])->middleware('throttle:5,1');
-Route::post('/appointments/suivi', [AppointmentController::class, 'suivi'])->middleware('throttle:10,1');
+Route::get('/availability', [AppointmentController::class, 'availableSlots'])->middleware('throttle:120,1');
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', fn (Request $request) => response()->json($request->user()));
+    Route::put('/profile', [AuthController::class, 'profile']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/appointments', [AppointmentController::class, 'store'])->middleware('throttle:10,1');
     Route::middleware('admin')->prefix('admin')->group(function () {
@@ -26,4 +27,3 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/messages', [MessageController::class, 'index']);
     });
 });
-

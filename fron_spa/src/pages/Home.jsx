@@ -1,33 +1,9 @@
 import React from 'react';
-import { Link } from '../ui';
+
 
 export default function Home() {
     return (
         <div className="lunea-container">
-
-            {/* NAVBAR */}
-            <nav className="lunea-navbar">
-
-                <Link href="/" className="lunea-logo">
-                    <div className="logo-name">🌿 Lunéa Spa</div>
-                    <div className="logo-subtitle">
-                        WELLNESS & RELAXATION
-                    </div>
-                </Link>
-
-                <div className="nav-links">
-                    <Link href="/">Home</Link>
-                    <Link href="/services">Services</Link>
-                      <Link href="/contact">Contact</Link>
-                </div>
-
-<Link href="/connexion" className="login-btn">
-    Connexion
-</Link>
-
-
-            </nav>
-
 
             {/* HERO */}
             <main>

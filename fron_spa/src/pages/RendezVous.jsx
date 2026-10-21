@@ -1,11 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Head, Link } from "../ui";
 
-
-const heures = [
-    "09:00", "10:00", "11:00", "12:00",
-    "14:00", "15:00", "16:00", "17:00",
-];
 
 const moisFrancais = [
     "Janvier", "Février", "Mars", "Avril",
@@ -16,18 +11,29 @@ const moisFrancais = [
 const joursFrancais = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
 import { api, csrf, errorText } from '../api';
-import { useNavigate } from 'react-router-dom';
 export default function RendezVous({ service }) {
     const maintenant = new Date();
-    const navigate = useNavigate();
     const [processing, setProcessing] = useState(false);
-    const [client, setClient] = useState({ nom: '', prenom: '', telephone: '' });
 
     const [mois, setMois] = useState(maintenant.getMonth());
     const [annee, setAnnee] = useState(maintenant.getFullYear());
     const [dateChoisie, setDateChoisie] = useState("");
     const [heureChoisie, setHeureChoisie] = useState("");
     const [message, setMessage] = useState("");
+
+    const [availability, setAvailability] = useState({ date: '', slots: [], loading: false, error: '' });
+    const [revision, setRevision] = useState(0);
+    const [reservation, setReservation] = useState(null);
+    useEffect(() => {
+        if (!dateChoisie) return;
+        let active = true;
+        setHeureChoisie('');
+        setAvailability({ date: dateChoisie, slots: [], loading: true, error: '' });
+        api.get('/api/availability', { params: { service_id: service.id, date: dateChoisie } })
+            .then(({ data }) => { if (active) setAvailability({ date: dateChoisie, slots: data.slots, loading: false, error: '' }); })
+            .catch(error => { if (active) setAvailability({ date: dateChoisie, slots: [], loading: false, error: errorText(error) }); });
+        return () => { active = false; };
+    }, [dateChoisie, service.id, revision]);
 
     if (!service) {
         return <p>Service introuvable.</p>;
@@ -58,9 +64,10 @@ export default function RendezVous({ service }) {
         cases.push({ jour, ancien: false, date });
     }
 
+    let jourSuivant = 1;
     while (cases.length % 7 !== 0) {
         cases.push({
-            jour: cases.length % 7 + 1,
+            jour: jourSuivant++,
             ancien: true,
             date: "",
         });
@@ -86,9 +93,9 @@ export default function RendezVous({ service }) {
         setProcessing(true); setMessage('');
         try {
             await csrf();
-            const { data } = await api.post('/api/appointments', { ...client, service_id: service.id, appointment_date: dateChoisie, appointment_time: heureChoisie });
-            navigate('/mon-rendez-vous', { state: { code: data.code_suivi } });
-        } catch (error) { setMessage(errorText(error)); }
+            const { data } = await api.post('/api/appointments', { service_id: service.id, appointment_date: dateChoisie, appointment_time: heureChoisie });
+            setReservation(data);
+        } catch (error) { setMessage(errorText(error)); setRevision(value => value + 1); }
         finally { setProcessing(false); }
     }
 
@@ -137,10 +144,13 @@ export default function RendezVous({ service }) {
 
                         <div className="booking-divider" />
 
-                        <form onSubmit={confirmer}>
-                            <div className="booking-client">
-                            {['nom', 'prenom', 'telephone'].map(field => <label key={field}>{field}<input required type={field === 'telephone' ? 'tel' : 'text'} maxLength={255} value={client[field]} onChange={e => setClient({ ...client, [field]: e.target.value })}/></label>)}
-                            </div>
+                        {reservation ? <section className="booking-success" role="status">
+                            <h3>Votre rendez-vous est confirmé</h3>
+                            <p>{service.name} — {reservation.appointment_date} à {reservation.appointment_time.slice(0, 5)}</p>
+                            <p>Durée : {service.duration} min · {service.price} DH</p>
+                            <button type="button" className="booking-confirm" onClick={() => { setReservation(null); setDateChoisie(''); setHeureChoisie(''); setMessage(''); }}>Réserver un autre rendez-vous</button>
+                        </section> : <form onSubmit={confirmer}>
+                            <p>Vos coordonnées sont reprises automatiquement depuis votre compte.</p>
                             <h3 className="booking-section-title">
                                 <span>▦</span> Choisissez une date
                             </h3>
@@ -216,8 +226,12 @@ export default function RendezVous({ service }) {
                                 <span>◷</span> Choisissez une heure
                             </h3>
 
+                            {!dateChoisie && <p role="status">Choisissez une date pour voir les horaires disponibles.</p>}
+                            {dateChoisie && availability.loading && <p role="status">Recherche des créneaux disponibles…</p>}
+                            {availability.error && <p role="alert">{availability.error} <button type="button" onClick={() => setRevision(value => value + 1)}>Réessayer</button></p>}
+                            {dateChoisie && availability.date === dateChoisie && !availability.loading && !availability.error && availability.slots.length === 0 && <p role="status">Aucun créneau disponible à cette date. Choisissez un autre jour.</p>}
                             <div className="booking-times">
-                                {heures.map((heure) => (
+                                {(availability.date === dateChoisie && !availability.loading ? availability.slots : []).map((heure) => (
                                     <button
                                         type="button"
                                         key={heure}
@@ -244,11 +258,11 @@ export default function RendezVous({ service }) {
 
                             <button
                                 type="submit"
-                                className="booking-confirm" disabled={processing}
+                                className="booking-confirm" disabled={processing || !dateChoisie || !heureChoisie || availability.loading || availability.date !== dateChoisie || !availability.slots.includes(heureChoisie)}
                             >
-                                ▦ &nbsp; Confirmer ma demande
+                                ▦ &nbsp; Confirmer mon rendez-vous
                             </button>
-                        </form>
+                        </form>}
 
                         <Link href="/services" className="booking-back">
                             ← &nbsp; Retour aux services
