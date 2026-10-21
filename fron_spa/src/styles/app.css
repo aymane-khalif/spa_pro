@@ -1161,7 +1161,7 @@ main {
 
 /* Warm gouz background */
 .services-page {
-    background: #d9b38a !important;
+    background: #d9b38a;
     color: #493326;
 }
 
@@ -1394,17 +1394,17 @@ main {
 /* Fond rose poudré — Lunéa Spa */
 
 .services-page {
-    background: #e9c1b5 !important;
+    background: #e9c1b5;
 }
 
 /* Fond principal de la section Services */
 .services-page .services-section {
-    background: #e9c1b5 !important;
+    background: #e9c1b5;
 }
 
 /* Cards légèrement plus claires que le fond */
 .services-page .service-card {
-    background: #f5e3da !important;
+    background: #f5e3da;
     border-color: #d9b49e;
 }
 
@@ -1564,7 +1564,7 @@ main {
 }
 
 .service-bottom .price {
-    border-radius: 50px !important;
+    border-radius: 50px;
     padding: 7px 14px;
     display: inline-block;
      background:#70462c;

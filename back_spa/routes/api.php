@@ -13,6 +13,8 @@ Route::post('/contact', [MessageController::class, 'store'])->middleware('thrott
 Route::get('/availability', [AppointmentController::class, 'availableSlots'])->middleware('throttle:120,1');
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', fn (Request $request) => response()->json($request->user()));
+    Route::post('/profile/photo', [\App\Http\Controllers\ProfilePhotoController::class, 'store'])->middleware('throttle:10,1');
+    Route::get('/profile/photo', [\App\Http\Controllers\ProfilePhotoController::class, 'show']);
     Route::put('/profile', [AuthController::class, 'profile']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/appointments', [AppointmentController::class, 'store'])->middleware('throttle:10,1');

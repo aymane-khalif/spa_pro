@@ -23,7 +23,17 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'profile_photo_path',
     ];
+
+    protected $appends = ['profile_photo_url'];
+
+    public function getProfilePhotoUrlAttribute(): ?string
+    {
+        return $this->profile_photo_path
+            ? url('/api/profile/photo').'?v='.substr(hash('sha256',$this->profile_photo_path),0,16)
+            : null;
+    }
 
     protected function casts(): array
     {

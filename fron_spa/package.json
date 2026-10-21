@@ -9,13 +9,15 @@
     "preview": "vite preview --host localhost"
   },
   "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/dm-sans": "^5.3.0",
+    "axios": "^1.11.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-router-dom": "^7.0.0",
-    "axios": "^1.11.0"
+    "react-router-dom": "^7.0.0"
   },
   "devDependencies": {
-    "vite": "^7.0.7",
-    "@vitejs/plugin-react": "^5.1.4"
+    "@vitejs/plugin-react": "^5.1.4",
+    "vite": "^7.0.7"
   }
 }

@@ -11,6 +11,12 @@ import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import './styles/app.css';
 import './styles/pro.css';
+import '@fontsource/cormorant-garamond/latin-400.css';
+import '@fontsource/cormorant-garamond/latin-400-italic.css';
+import '@fontsource/cormorant-garamond/latin-500.css';
+import '@fontsource/dm-sans/latin-400.css';
+import '@fontsource/dm-sans/latin-500.css';
+import './styles/spa-theme.css';
 function ServicePage({ booking = false }) {
  const [services, setServices] = useState(null), [error, setError] = useState(''); const location = useLocation();
  useEffect(() => { let active = true; api.get('/api/services').then(r => { if(active) setServices(r.data); }).catch(e => { if(active) setError(errorText(e)); }); return () => { active = false; }; }, []);
@@ -43,7 +49,7 @@ function Navigation() {
    <header className={`site-header ${location.pathname === '/' ? 'site-header--home' : ''}`}>
      <nav className="lunea-navbar" aria-label="Navigation principale">
        <Link to="/" className="lunea-logo" aria-label="Lunéa Spa — Accueil">
-         <span className="logo-name">🌿 Lunéa Spa</span>
+         <span className="logo-name"><svg className="brand-lotus" viewBox="0 0 44 44" fill="none" aria-hidden="true"><path d="M22 35C9 30 5 23 7 14c8 0 13 7 15 21Zm0 0c13-5 17-12 15-21-8 0-13 7-15 21Zm0 0C12 23 14 12 22 5c8 7 10 18 0 30ZM7 35c10 6 20 6 30 0" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>Lunéa<span className="logo-spa-word">SPA</span></span>
          <span className="logo-subtitle">WELLNESS &amp; RELAXATION</span>
        </Link>
        <div className="nav-links">
@@ -60,5 +66,8 @@ function Navigation() {
    </header>
  </>;
 }
-function App() { return <BrowserRouter><Navigation/><Routes><Route path="/" element={<Home/>}/><Route path="/services" element={<ServicePage/>}/><Route path="/rendez-vous" element={<Protected><ServicePage booking/></Protected>}/><Route path="/connexion" element={<Connexion/>}/><Route path="/login" element={<Navigate to="/connexion" replace/>}/><Route path="/contact" element={<Contact/>}/><Route path="/profil" element={<Protected><Profile/></Protected>}/><Route path="/mon-rendez-vous" element={<Navigate to="/services" replace/>}/><Route path="/admin/*" element={<Protected admin><Admin/></Protected>}/><Route path="/clients/*" element={<Navigate to="/admin/clients" replace/>}/><Route path="/appointments/*" element={<Navigate to="/admin/appointments" replace/>}/><Route path="*" element={<main className="pro-panel">Page introuvable.</main>}/></Routes></BrowserRouter>; }
+function Footer() {
+ return <footer className="spa-footer"><div className="spa-footer-top"><div><div className="footer-brand">Lunéa Spa<span aria-hidden="true"> ✧</span></div><p>Un lieu pour ralentir. Un moment pour vous.<br/>Beauté · Bien-être · Détente</p></div><div className="spa-footer-links"><Link to="/">Accueil</Link><Link to="/services">Nos soins</Link><Link to="/contact">Nous contacter</Link></div><div><p>Rabat, Maroc<br/>contact@luneaspa.com</p></div></div><div className="spa-footer-bottom"><span>© {new Date().getFullYear()} Lunéa Spa</span><span>Le bien-être, tout simplement.</span></div></footer>;
+}
+function App() { return <BrowserRouter><Navigation/><Routes><Route path="/" element={<Home/>}/><Route path="/services" element={<ServicePage/>}/><Route path="/rendez-vous" element={<Protected><ServicePage booking/></Protected>}/><Route path="/connexion" element={<Connexion/>}/><Route path="/login" element={<Navigate to="/connexion" replace/>}/><Route path="/contact" element={<Contact/>}/><Route path="/profil" element={<Protected><Profile/></Protected>}/><Route path="/mon-rendez-vous" element={<Navigate to="/services" replace/>}/><Route path="/admin/*" element={<Protected admin><Admin/></Protected>}/><Route path="/clients/*" element={<Navigate to="/admin/clients" replace/>}/><Route path="/appointments/*" element={<Navigate to="/admin/appointments" replace/>}/><Route path="*" element={<main className="pro-panel">Page introuvable.</main>}/></Routes><Footer/></BrowserRouter>; }
 createRoot(document.getElementById('root')).render(<React.StrictMode><App/></React.StrictMode>);
