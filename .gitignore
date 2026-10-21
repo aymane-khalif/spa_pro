@@ -12,3 +12,10 @@ Thumbs.db
 
 **/*.sqlite
 **/*.sqlite-*
+
+# Private runtime data
+back_spa/storage/app/*
+!back_spa/storage/app/**/
+!back_spa/storage/app/**/.gitignore
+back_spa/bootstrap/cache/*.php
+back_spa/.phpunit.result.cache

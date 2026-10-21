@@ -22,7 +22,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('admin')->prefix('admin')->group(function () {
         Route::apiResource('clients', ClientController::class);
         Route::get('/appointments', [AppointmentController::class, 'index']);
-        Route::get('/my-appointments', [AppointmentController::class, 'mine']);
     Route::post('/appointments', [AppointmentController::class, 'adminStore']);
         Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
         Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);

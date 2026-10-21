@@ -1,149 +1,93 @@
 # Lunéa Spa
 
-Deux applications indépendantes, reliées exclusivement par une API JSON :
-
-- `back_spa/` : Laravel 12, Sanctum, MySQL, validation et logique métier.
-- `fron_spa/` : React, React Router, Vite, CSS et images.
-
-Laravel ne sert aucune page React et React ne dépend pas d'Inertia. Les ports de développement sont 8000 (API) et 5173 (frontend).
+Application séparée : `back_spa` (API Laravel 12 / MySQL) et `fron_spa` (React / Vite). Les deux applications communiquent par API avec une session Sanctum.
 
 ## Prérequis
 
-PHP 8.2+ avec PDO MySQL, Composer 2, Node.js 22.12+ et npm, MySQL 8+. Pour les tests uniquement : PDO SQLite. Git.
+- PHP 8.2+ et Composer 2 ; extensions PHP usuelles Laravel, `pdo_mysql`, `fileinfo`. `pdo_sqlite` pour les tests.
+- Node.js 22.12+ (ou 20.19+) et npm.
+- MySQL 8+ ou MariaDB 10.4+ (XAMPP convient). Démarrer MySQL ; Apache n'est pas nécessaire avec `artisan serve`.
 
-## Installation après clone
+## Installation après le clone
 
-### Backend
-
-Dans `back_spa` :
+### 1. Backend
 
 ```sh
+git clone https://github.com/aymane-khalif/spa_pro.git
+cd spa_pro
+```
+
+Depuis le dossier cloné :
+
+```sh
+cd back_spa
 composer install
 ```
 
-Copier `.env.example` vers `.env` (`Copy-Item .env.example .env` dans PowerShell, `cp .env.example .env` sous macOS/Linux).
-
-Créer vous-même une base MySQL vide, puis configurer :
+L'installation crée `.env` et une clé d'application si elles sont absentes. Une configuration existante est conservée. Créer une base MySQL vide, par exemple `spa_pro`, puis renseigner dans **`back_spa/.env`** :
 
 ```dotenv
-DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=spa_pro
 DB_USERNAME=root
 DB_PASSWORD=
-APP_URL=http://localhost:8000
-FRONTEND_URL=http://localhost:5173
-SANCTUM_STATEFUL_DOMAINS=localhost:5173
 ```
 
-Puis, lorsque la connexion MySQL est prête :
+Utiliser les identifiants de votre installation MySQL. Ne pas modifier `.env.example` avec des secrets.
 
 ```sh
-php artisan key:generate
-php artisan migrate
-php artisan serve --host=localhost --port=8000
+php artisan migrate --seed
+php artisan serve
 ```
 
-Les migrations créent uniquement le schéma. Pour retrouver les six services du catalogue original, exécuter explicitement :
+L'API démarre sur `http://localhost:8000`. Les migrations créent le schéma ; le seeder ajoute uniquement les six soins nécessaires au catalogue. Aucun compte, message ou rendez-vous de démonstration. Pour un schéma entièrement vide, utiliser `php artisan migrate` sans `--seed` (le catalogue sera vide).
+
+### 2. Frontend — deuxième terminal
+
+Depuis le dossier cloné :
 
 ```sh
-php artisan db:seed --class=ServiceSeeder
-```
-
-`php artisan db:seed` installe également uniquement ce catalogue. Aucun compte, client, rendez-vous ou message de démonstration n'est créé. Le seeder peut être relancé : il ajoute les services manquants sans dupliquer ni modifier ceux déjà présents. Les prix, descriptions et images proviennent du code initial. Les durées d'origine n'étant pas disponibles, les valeurs proposées sont : Relaxing Massage 60 min, Facial Treatment 45 min, Body Care 60 min, Aromatherapy 60 min, Hammam Spa 60 min, Signature Head Massage 30 min. Elles sont modifiables dans la base MySQL. Les images existantes sont servies par React depuis `public/images/`. Sans seeding, la liste reste vide. La page d'accueil garde ses cartes de présentation statiques d'origine.
-
-Cette histoire de migrations est prévue pour une NOUVELLE base vide. Ne pas la lancer sur une ancienne base contenant déjà les migrations du projet original. Aucun `migrate:fresh` n'est nécessaire.
-
-### Frontend (deuxième terminal)
-
-Dans `fron_spa` :
-
-```sh
+cd fron_spa
 npm ci
-```
-
-Copier `.env.example` vers `.env`, puis :
-
-```dotenv
-VITE_API_URL=http://localhost:8000
-```
-
-```sh
 npm run dev
 ```
 
-Ouvrir `http://localhost:5173`. Utiliser `localhost` pour les deux applications (ne pas mélanger avec `127.0.0.1`). Redémarrer Vite après modification de son `.env`; exécuter `php artisan config:clear` après modification de la configuration Laravel.
+L'installation crée automatiquement `fron_spa/.env` si absent. Ouvrir **http://localhost:5173**. Utiliser `localhost` pour les deux applications afin de partager correctement les cookies de session.
 
-## Connexion et administration
+La commande est `npm run dev`. Après la première installation, seuls MySQL, `php artisan serve` et `npm run dev` doivent être démarrés.
 
-L'authentification utilise les sessions Sanctum, un cookie HttpOnly, et la protection CSRF. Avant les requêtes POST/PUT/PATCH/DELETE, React appelle `/sanctum/csrf-cookie`; Axios transmet les cookies et le jeton XSRF. Aucun token n'est stocké dans localStorage. Les requêtes métier passent par `/api/*`.
+## Configuration
 
-Inscrire un compte depuis `/connexion`. Pour lui attribuer les droits administrateur, exécuter explicitement côté backend :
+- Frontend : `VITE_API_URL=http://localhost:8000` dans `fron_spa/.env`.
+- Backend : `APP_URL`, `SERVER_HOST`, `SERVER_PORT`, `FRONTEND_URL` et `SANCTUM_STATEFUL_DOMAINS` dans `back_spa/.env` doivent correspondre aux adresses utilisées si les ports changent. Redémarrer les serveurs après modification ; `php artisan config:clear` si la configuration Laravel avait été mise en cache.
+- Les inscriptions enregistrent nom, prénom et téléphone. Le profil permet de les modifier et d'ajouter une photo privée. Les réservations et contacts connectés réutilisent les informations du compte.
+- Les disponibilités tiennent compte de la durée du soin et des rendez-vous existants, dans le fuseau `Africa/Casablanca`. Les horaires sont définis dans `back_spa/config/booking.php`.
+- Contact : les messages sont conservés en base. Avec `MAIL_MAILER=log`, aucun email réel n'est envoyé. L'adresse de destination prévue est `khadim.hiba07@gmail.com`. Aucun mot de passe Gmail n'est nécessaire pour utiliser l'application dans cette configuration.
+- Les photos restent dans le stockage privé Laravel et sont servies par une route authentifiée ; `storage:link` n'est pas nécessaire.
+
+## Administrateur
+
+Créer un compte dans l'interface, puis depuis `back_spa` :
 
 ```sh
 php artisan spa:admin votre-email@example.com
 ```
 
-L'inscription publique ne donne jamais de droits administrateur. L'espace React `/admin/appointments` permet de gérer les rendez-vous, `/admin/clients` les clients et `/admin/messages` les messages. Les clients ne peuvent pas accéder aux API d'administration. Une réservation utilise l'email du compte connecté et confirme immédiatement le rendez-vous si le créneau est libre. Le suivi public et les codes de suivi ne sont plus proposés.
-
-## API
-
-| Méthode | URL | Accès |
-| --- | --- | --- |
-| GET | `/api/services` | Public |
-| POST | `/api/inscription`, `/api/login` | Public, limité |
-| GET | `/api/user` | Connecté |
-| PUT | `/api/profile` | Connecté, nom/prénom/téléphone |
-| POST | `/api/logout`, `/api/appointments` | Connecté |
-| GET | `/api/availability?service_id={id}&date=YYYY-MM-DD` | Public, horaires disponibles |
-| POST | `/api/contact` | Public, limité |
-| GET, POST | `/api/admin/clients` | Admin |
-| GET, PUT, DELETE | `/api/admin/clients/{id}` | Admin |
-| GET, POST | `/api/admin/appointments` | Admin |
-| GET, PUT, DELETE | `/api/admin/appointments/{id}` | Admin |
-| PATCH | `/api/admin/appointments/{id}/status` | Admin, `confirmed` ou `cancelled` |
-| GET | `/api/admin/messages` | Admin |
-
-Erreurs : 401 non connecté, 403 sans permission, 404 introuvable, 422 validation, 429 limite de requêtes. Le client demande `Accept: application/json`.
+L'administration permet de gérer les clients, rendez-vous et messages. Aucun administrateur par défaut.
 
 ## Vérification
 
 ```sh
-# back_spa : base SQLite éphémère en mémoire, aucune connexion MySQL
+# Depuis back_spa : tests isolés en SQLite mémoire, sans toucher à MySQL.
 php artisan test
-php artisan route:list --path=api
 
-# fron_spa
+# Depuis fron_spa : compilation de production.
 npm run build
 ```
 
-Les tests créent leurs données uniquement en mémoire et vérifient migrations, authentification, permissions, réservation, disponibilité, administration et contact.
+## Partage sur GitHub
 
-## GitHub et déploiement
+Versionner les sources, migrations, seeders, `.env.example`, `composer.lock` et `package-lock.json`. Le `.gitignore` exclut les environnements locaux, dépendances, compilations, journaux et fichiers SQLite. Ne pas partager la base locale, les photos des utilisateurs ou des identifiants privés. Chaque installation utilise sa propre base et sa propre clé.
 
-Versionner tout le dossier `spa_pro`, y compris `composer.lock`, `package-lock.json`, migrations et `.env.example`. Les `.env`, `vendor`, `node_modules`, logs et build sont ignorés. Aucun identifiant MySQL ou export de données ne doit être publié.
-
-Pour un hébergement, servir le backend depuis `back_spa/public` et le build frontend depuis `fron_spa/dist`, avec réécriture des URLs frontend vers `index.html`. Configurer `APP_URL`, `FRONTEND_URL`, `VITE_API_URL` et les domaines Sanctum. Les deux applications restent distinctes mais l'authentification SPA par cookies nécessite le même domaine principal (par exemple `app.exemple.com` et `api.exemple.com`). Configurer alors `SESSION_DOMAIN=.exemple.com`, `SESSION_SECURE_COOKIE=true`, HTTPS et `APP_DEBUG=false`.
-
-## Réservation selon disponibilité
-
-Le calendrier propose uniquement les créneaux libres via `/api/availability`. Le serveur contrôle à nouveau la disponibilité dans une transaction avant chaque création, déplacement ou réactivation. Les écritures de réservation prennent le même verrou de ligne MySQL : deux demandes simultanées ne peuvent pas confirmer des soins qui se chevauchent.
-
-En l'absence de gestion des employés ou des salles, la capacité est d'un soin à la fois pour tout le spa. Les rendez-vous `pending` et `confirmed` bloquent toute leur durée; les rendez-vous annulés libèrent le temps. Les bornes sont exclusives à la fin : un soin finissant à 11h permet un autre à 11h. Horaires : départs à 09h, 10h, 11h, 12h, 14h, 15h, 16h et 17h, uniquement si la durée tient dans 09h–13h ou 14h–18h. Les heures passées sont exclues selon Africa/Casablanca. Configuration : `back_spa/config/booking.php`.
-
-Le client voit une confirmation avec soin, date, heure, durée et prix, sans code ni page de suivi. L'ancienne URL frontend `/mon-rendez-vous` redirige vers les services. La colonne historique `code_suivi` est conservée en interne pour ne pas détruire les données des installations existantes, mais n'est plus exposée dans les réponses JSON.
-
-## Coordonnées du compte
-
-L’inscription conserve nom, prénom et téléphone dans `users`. Contact et réservation utilisent automatiquement l’identité du compte côté serveur; les champs d’identité envoyés par le navigateur ne peuvent pas la remplacer. Le formulaire contact connecté demande uniquement sujet et message; la réservation demande uniquement date et heure. Les invités gardent les champs nom/email du contact.
-
-Après mise à jour, exécuter `php artisan migrate` pour ajouter les trois colonnes de profil. La migration récupère les informations des anciens comptes depuis le client ayant le même email quand il existe. Le profil reste facultatif : les anciens comptes peuvent réserver directement avec les informations disponibles. Le nom complet est conservé si le nom/prénom séparé manque; les coordonnées déjà connues du client sont préservées, et les informations absentes restent vides. Aucun passage par `/profil` n'est imposé. Aucun compte ni numéro fictif n’est créé.
-
-## Photo de profil
-
-Depuis `/profil`, le compte connecté peut ajouter ou remplacer sa photo (JPG/PNG/WebP, 2 Mo maximum, 4096×4096 pixels maximum). `POST /api/profile/photo` accepte un fichier multipart nommé `photo`. `GET /api/profile/photo` sert uniquement la photo du compte connecté; les fichiers sont stockés sur le disque privé Laravel et exclus de Git. Aucun lien symbolique public n'est nécessaire. La migration ajoute `users.profile_photo_path`; appliquer `php artisan migrate` après la mise à jour. La réponse utilisateur inclut `profile_photo_url`, jamais le chemin du fichier. Une photo remplacée est supprimée après l'enregistrement de la nouvelle.
-
-## Mes réservations
-
-Le compte connecté retrouve ses rendez-vous sur `/mes-reservations`, accessible depuis la navigation, le profil et la confirmation de réservation. `GET /api/my-appointments` retourne uniquement les rendez-vous du client dont l'email correspond au compte connecté, paginés par 12, avec soin, date, heure et statut. Aucun code de suivi ni coordonnées d'autres clients n'est exposé. La page indique le prix actuel du catalogue; aucun historique de paiement n'est créé.
+Ne jamais lancer `migrate:fresh` sur une base contenant des données à conserver. Une nouvelle installation n'a besoin d'aucun export SQL.

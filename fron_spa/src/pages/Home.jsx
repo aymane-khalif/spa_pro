@@ -171,7 +171,7 @@ export default function Home() {
                         <span>CONTACT</span>
 
                         <p>
-                            contact@luneaspa.com
+                            khadim.hiba07@gmail.com
                         </p>
                     </div>
 

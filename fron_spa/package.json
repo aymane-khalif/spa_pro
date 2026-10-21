@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --host localhost",
     "build": "vite build",
-    "preview": "vite preview --host localhost"
+    "preview": "vite preview --host localhost",
+    "setup": "node scripts/setup.mjs",
+    "postinstall": "node scripts/setup.mjs"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.3.0",
