@@ -146,6 +146,7 @@ export default function RendezVous({ service }) {
 
                         {reservation ? <section className="booking-success" role="status">
                             <h3>Votre rendez-vous est confirmé</h3>
+                            <Link href="/mes-reservations" className="editorial-link">Voir mes réservations ↗</Link>
                             <p>{service.name} — {reservation.appointment_date} à {reservation.appointment_time.slice(0, 5)}</p>
                             <p>Durée : {service.duration} min · {service.price} DH</p>
                             <button type="button" className="booking-confirm" onClick={() => { setReservation(null); setDateChoisie(''); setHeureChoisie(''); setMessage(''); }}>Réserver un autre rendez-vous</button>

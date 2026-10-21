@@ -143,3 +143,7 @@ Après mise à jour, exécuter `php artisan migrate` pour ajouter les trois colo
 ## Photo de profil
 
 Depuis `/profil`, le compte connecté peut ajouter ou remplacer sa photo (JPG/PNG/WebP, 2 Mo maximum, 4096×4096 pixels maximum). `POST /api/profile/photo` accepte un fichier multipart nommé `photo`. `GET /api/profile/photo` sert uniquement la photo du compte connecté; les fichiers sont stockés sur le disque privé Laravel et exclus de Git. Aucun lien symbolique public n'est nécessaire. La migration ajoute `users.profile_photo_path`; appliquer `php artisan migrate` après la mise à jour. La réponse utilisateur inclut `profile_photo_url`, jamais le chemin du fichier. Une photo remplacée est supprimée après l'enregistrement de la nouvelle.
+
+## Mes réservations
+
+Le compte connecté retrouve ses rendez-vous sur `/mes-reservations`, accessible depuis la navigation, le profil et la confirmation de réservation. `GET /api/my-appointments` retourne uniquement les rendez-vous du client dont l'email correspond au compte connecté, paginés par 12, avec soin, date, heure et statut. Aucun code de suivi ni coordonnées d'autres clients n'est exposé. La page indique le prix actuel du catalogue; aucun historique de paiement n'est créé.

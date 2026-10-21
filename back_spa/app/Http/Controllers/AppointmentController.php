@@ -54,6 +54,16 @@ class AppointmentController extends Controller
         return response()->json($appointment->load('service'), 201);
     }
 
+    public function mine(Request $request)
+    {
+        $appointments = Appointment::query()
+            ->whereHas('client', fn ($query) => $query->where('email', $request->user()->email))
+            ->with('service:id,name,price,duration')
+            ->orderByDesc('appointment_date')->orderByDesc('appointment_time')->orderByDesc('id')
+            ->paginate(12, ['id','service_id','appointment_date','appointment_time','status']);
+        return response()->json($appointments)->header('Cache-Control','private, no-store');
+    }
+
     public function index() { return Appointment::with(['client', 'service'])->latest()->get(); }
     public function show(Appointment $appointment) { return $appointment->load(['client', 'service']); }
 

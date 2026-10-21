@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, csrf, errorText } from '../api';
+import { Link } from 'react-router-dom';
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -57,7 +58,7 @@ export default function Profile() {
     <div className="profile-layout">
       <aside className="profile-identity"><div className="profile-avatar">{user.profile_photo_url ? <img src={user.profile_photo_url} alt="Votre photo de profil"/> : <span aria-hidden="true">{initials}</span>}</div>
         <label className="profile-photo-picker">{uploading ? 'Envoi en cours…' : user.profile_photo_url ? 'Changer la photo' : 'Ajouter une photo'}<input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choisir une photo de profil" disabled={uploading || busy} onChange={uploadPhoto}/></label>
-        <small className="profile-photo-help">JPG, PNG ou WebP · 2 Mo max.</small><h2>{user.name}</h2><p>{user.email}</p>{joined && <small>Membre depuis le {joined}</small>}</aside>
+        <small className="profile-photo-help">JPG, PNG ou WebP · 2 Mo max.</small><h2>{user.name}</h2><p>{user.email}</p>{joined && <small>Membre depuis le {joined}</small>}<Link to="/mes-reservations" className="profile-reservations-link">Voir mes réservations ↗</Link></aside>
       <section className="profile-details" aria-label="Informations personnelles">
         <div className="profile-section-title"><h2>Informations personnelles</h2>{!editing && <button type="button" onClick={() => { setForm(fillForm(user)); setError(''); setSuccess(''); setEditing(true); }}>Modifier</button>}</div>
         {success && <p className="profile-success" role="status">{success}</p>}

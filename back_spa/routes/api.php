@@ -17,11 +17,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile/photo', [\App\Http\Controllers\ProfilePhotoController::class, 'show']);
     Route::put('/profile', [AuthController::class, 'profile']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/my-appointments', [AppointmentController::class, 'mine']);
     Route::post('/appointments', [AppointmentController::class, 'store'])->middleware('throttle:10,1');
     Route::middleware('admin')->prefix('admin')->group(function () {
         Route::apiResource('clients', ClientController::class);
         Route::get('/appointments', [AppointmentController::class, 'index']);
-        Route::post('/appointments', [AppointmentController::class, 'adminStore']);
+        Route::get('/my-appointments', [AppointmentController::class, 'mine']);
+    Route::post('/appointments', [AppointmentController::class, 'adminStore']);
         Route::get('/appointments/{appointment}', [AppointmentController::class, 'show']);
         Route::put('/appointments/{appointment}', [AppointmentController::class, 'update']);
         Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'status']);

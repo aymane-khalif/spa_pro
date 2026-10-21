@@ -8,6 +8,7 @@ import RendezVous from './pages/RendezVous';
 import Connexion from './pages/connexion';
 import Contact from './pages/Contact';
 import Profile from './pages/Profile';
+import MyReservations from './pages/MyReservations';
 import Admin from './pages/Admin';
 import './styles/app.css';
 import './styles/pro.css';
@@ -39,7 +40,7 @@ function Navigation() {
  const [user, setUser] = useState(null);
  useEffect(() => {
    let active = true;
-   const titles = { '/': 'Accueil', '/services': 'Nos Services', '/contact': 'Contact', '/profil': 'Mon profil', '/connexion': 'Connexion', '/rendez-vous': 'Réservation' };
+   const titles = { '/': 'Accueil', '/services': 'Nos Services', '/contact': 'Contact', '/profil': 'Mon profil', '/mes-reservations': 'Mes réservations', '/connexion': 'Connexion', '/rendez-vous': 'Réservation' };
    document.title = (titles[location.pathname] || 'Administration') + ' | Lunéa Spa';
    api.get('/api/user').then(({ data }) => { if (active) setUser(data); }).catch(() => { if (active) setUser(null); });
    return () => { active = false; };
@@ -59,7 +60,7 @@ function Navigation() {
          {user?.is_admin && <Link to="/admin/appointments">Administration</Link>}
        </div>
        <div className="site-account">
-         {user ? <><Link to="/profil" className="site-profile">Mon profil</Link><button type="button" className="login-btn" onClick={logout}>Déconnexion</button></> : <Link to="/connexion" className="login-btn">Connexion</Link>}
+         {user ? <><Link to="/mes-reservations" className="site-profile">Mes réservations</Link><Link to="/profil" className="site-profile">Mon profil</Link><button type="button" className="login-btn" onClick={logout}>Déconnexion</button></> : <Link to="/connexion" className="login-btn">Connexion</Link>}
        </div>
      </nav>
      {error && <p className="site-nav-error" role="alert">{error}</p>}
@@ -69,5 +70,5 @@ function Navigation() {
 function Footer() {
  return <footer className="spa-footer"><div className="spa-footer-top"><div><div className="footer-brand">Lunéa Spa<span aria-hidden="true"> ✧</span></div><p>Un lieu pour ralentir. Un moment pour vous.<br/>Beauté · Bien-être · Détente</p></div><div className="spa-footer-links"><Link to="/">Accueil</Link><Link to="/services">Nos soins</Link><Link to="/contact">Nous contacter</Link></div><div><p>Rabat, Maroc<br/>contact@luneaspa.com</p></div></div><div className="spa-footer-bottom"><span>© {new Date().getFullYear()} Lunéa Spa</span><span>Le bien-être, tout simplement.</span></div></footer>;
 }
-function App() { return <BrowserRouter><Navigation/><Routes><Route path="/" element={<Home/>}/><Route path="/services" element={<ServicePage/>}/><Route path="/rendez-vous" element={<Protected><ServicePage booking/></Protected>}/><Route path="/connexion" element={<Connexion/>}/><Route path="/login" element={<Navigate to="/connexion" replace/>}/><Route path="/contact" element={<Contact/>}/><Route path="/profil" element={<Protected><Profile/></Protected>}/><Route path="/mon-rendez-vous" element={<Navigate to="/services" replace/>}/><Route path="/admin/*" element={<Protected admin><Admin/></Protected>}/><Route path="/clients/*" element={<Navigate to="/admin/clients" replace/>}/><Route path="/appointments/*" element={<Navigate to="/admin/appointments" replace/>}/><Route path="*" element={<main className="pro-panel">Page introuvable.</main>}/></Routes><Footer/></BrowserRouter>; }
+function App() { return <BrowserRouter><Navigation/><Routes><Route path="/" element={<Home/>}/><Route path="/services" element={<ServicePage/>}/><Route path="/rendez-vous" element={<Protected><ServicePage booking/></Protected>}/><Route path="/connexion" element={<Connexion/>}/><Route path="/login" element={<Navigate to="/connexion" replace/>}/><Route path="/contact" element={<Contact/>}/><Route path="/profil" element={<Protected><Profile/></Protected>}/><Route path="/mes-reservations" element={<Protected><MyReservations/></Protected>}/><Route path="/mon-rendez-vous" element={<Navigate to="/services" replace/>}/><Route path="/admin/*" element={<Protected admin><Admin/></Protected>}/><Route path="/clients/*" element={<Navigate to="/admin/clients" replace/>}/><Route path="/appointments/*" element={<Navigate to="/admin/appointments" replace/>}/><Route path="*" element={<main className="pro-panel">Page introuvable.</main>}/></Routes><Footer/></BrowserRouter>; }
 createRoot(document.getElementById('root')).render(<React.StrictMode><App/></React.StrictMode>);
